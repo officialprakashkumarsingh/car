@@ -1,86 +1,58 @@
 #ifndef CANVAS_H
 #define CANVAS_H
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <chrono>
-#include <thread>
-#include <mutex>
-#include <stdexcept>
+#include <stdint.h>
+
+// Canvas structure to hold pixel data and dimensions
+typedef struct {
+    int width;
+    int height;
+    uint32_t* pixels; // 32-bit color (RGBA)
+} Canvas;
+
+// Function declarations
 
 /**
- * @class Canvas
- * @brief A simple console-based canvas for rendering 2D grid-based graphics.
- *        Useful for text-based games like Snake.
+ * Initialize a canvas with the given width and height.
+ * Allocates memory for pixel data.
+ * @param canvas Pointer to the Canvas structure to initialize.
+ * @param width Width of the canvas in pixels.
+ * @param height Height of the canvas in pixels.
+ * @return 0 on success, -1 on memory allocation failure.
  */
-class Canvas {
-public:
-    /**
-     * @brief Constructor to initialize the canvas with specified dimensions.
-     * @param width Width of the canvas in characters.
-     * @param height Height of the canvas in characters.
-     */
-    Canvas(int width, int height);
+int canvas_init(Canvas* canvas, int width, int height);
 
-    /**
-     * @brief Destructor to clean up resources.
-     */
-    ~Canvas();
+/**
+ * Free the memory allocated for the canvas pixel data.
+ * @param canvas Pointer to the Canvas structure to destroy.
+ */
+void canvas_destroy(Canvas* canvas);
 
-    /**
-     * @brief Clear the canvas to a default state (all spaces).
-     */
-    void clear();
+/**
+ * Clear the canvas by setting all pixels to the specified color.
+ * @param canvas Pointer to the Canvas structure.
+ * @param color 32-bit color value (RGBA) to fill the canvas with.
+ */
+void canvas_clear(Canvas* canvas, uint32_t color);
 
-    /**
-     * @brief Draw a character at the specified position on the canvas.
-     * @param x X-coordinate (column).
-     * @param y Y-coordinate (row).
-     * @param ch Character to draw.
-     * @throws std::out_of_range if coordinates are outside canvas bounds.
-     */
-    void draw(int x, int y, char ch);
+/**
+ * Set the color of a specific pixel on the canvas.
+ * Checks for bounds to prevent buffer overflow.
+ * @param canvas Pointer to the Canvas structure.
+ * @param x X-coordinate of the pixel.
+ * @param y Y-coordinate of the pixel.
+ * @param color 32-bit color value (RGBA) to set.
+ * @return 0 on success, -1 if coordinates are out of bounds.
+ */
+int canvas_set_pixel(Canvas* canvas, int x, int y, uint32_t color);
 
-    /**
-     * @brief Draw a string starting at the specified position.
-     * @param x X-coordinate (column).
-     * @param y Y-coordinate (row).
-     * @param str String to draw.
-     * @throws std::out_of_range if starting coordinates are outside canvas bounds.
-     */
-    void drawString(int x, int y, const std::string& str);
-
-    /**
-     * @brief Render the current state of the canvas to the console.
-     */
-    void render();
-
-    /**
-     * @brief Get the width of the canvas.
-     * @return Width in characters.
-     */
-    int getWidth() const;
-
-    /**
-     * @brief Get the height of the canvas.
-     * @return Height in characters.
-     */
-    int getHeight() const;
-
-private:
-    int width_;                         // Canvas width
-    int height_;                        // Canvas height
-    std::vector<std::vector<char>> buffer_; // 2D buffer for storing canvas content
-    std::mutex renderMutex_;            // Mutex for thread-safe rendering
-
-    /**
-     * @brief Check if the given coordinates are within canvas bounds.
-     * @param x X-coordinate.
-     * @param y Y-coordinate.
-     * @return True if within bounds, false otherwise.
-     */
-    bool isWithinBounds(int x, int y) const;
-};
+/**
+ * Get the color of a specific pixel on the canvas.
+ * @param canvas Pointer to the Canvas structure.
+ * @param x X-coordinate of the pixel.
+ * @param y Y-coordinate of the pixel.
+ * @return The 32-bit color value (RGBA) of the pixel, or 0 if out of bounds.
+ */
+uint32_t canvas_get_pixel(Canvas* canvas, int x, int y);
 
 #endif // CANVAS_H

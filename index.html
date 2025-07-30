@@ -3,33 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Snake Game</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Emojipedia - Emoji Directory</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="game-container">
-        <h1>Snake Game</h1>
-        <div class="game-details">
-            <span class="score">Score: 0</span>
-            <span class="high-score">High Score: 0</span>
+    <header>
+        <h1>Emojipedia</h1>
+        <p>Your go-to directory for emoji meanings!</p>
+    </header>
+    <main class="emoji-container">
+        <div class="emoji-card">
+            <span class="emoji">😀</span>
+            <p class="emoji-name">Grinning Face</p>
         </div>
-        <div class="controls">
-            <select id="difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-            </select>
-            <button id="startPause">Start</button>
+        <div class="emoji-card">
+            <span class="emoji">😂</span>
+            <p class="emoji-name">Face with Tears of Joy</p>
         </div>
-        <canvas id="gameCanvas" width="500" height="500"></canvas>
-        <div id="gameOver" class="game-over">
-            <h2>Game Over!</h2>
-            <p>Your Score: <span class="final-score">0</span></p>
-            <button id="restart">Restart</button>
+        <div class="emoji-card">
+            <span class="emoji">😍</span>
+            <p class="emoji-name">Smiling Face with Heart-Eyes</p>
         </div>
-    </div>
-    <audio id="eatSound" src="assets/eat.wav" preload="auto"></audio>
-    <audio id="gameOverSound" src="assets/gameover.wav" preload="auto"></audio>
+        <div class="emoji-card">
+            <span class="emoji">😢</span>
+            <p class="emoji-name">Crying Face</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">😡</span>
+            <p class="emoji-name">Angry Face</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">👍</span>
+            <p class="emoji-name">Thumbs Up</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">👎</span>
+            <p class="emoji-name">Thumbs Down</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">❤️</span>
+            <p class="emoji-name">Red Heart</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">🎉</span>
+            <p class="emoji-name">Party Popper</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">🌟</span>
+            <p class="emoji-name">Glowing Star</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">🍕</span>
+            <p class="emoji-name">Pizza</p>
+        </div>
+        <div class="emoji-card">
+            <span class="emoji">🐶</span>
+            <p class="emoji-name">Dog Face</p>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2023 Emojipedia. All rights reserved.</p>
+    </footer>
     <script src="script.js"></script>
 </body>
 </html>
