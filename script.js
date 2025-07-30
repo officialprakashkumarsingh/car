@@ -1,173 +1,194 @@
-// Game canvas and context
+// Game variables
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const scoreElement = document.querySelector('.score');
+const highScoreElement = document.querySelector('.high-score');
+const startPauseButton = document.getElementById('startPause');
+const difficultySelect = document.getElementById('difficulty');
+const gameOverScreen = document.getElementById('gameOver');
+const finalScoreElement = document.querySelector('.final-score');
+const restartButton = document.getElementById('restart');
+const eatSound = document.getElementById('eatSound');
+const gameOverSound = document.getElementById('gameOverSound');
 
-// Constants
-const gridSize = 20;
-const tileCount = canvas.width / gridSize;
-
-// Snake properties
-let snake = [
-    { x: 10, y: 10 }
-];
-let velocityX = 0;
-let velocityY = 0;
-let foodX;
-let foodY;
-let gameOver = false;
+let gridSize = 20;
+let tileCount = canvas.width / gridSize;
+let snake = [{ x: 10, y: 10 }];
+let food = { x: 15, y: 15 };
+let dx = 0;
+let dy = 0;
 let score = 0;
+let highScore = localStorage.getItem('highScore') || 0;
+let gameLoop;
+let isGameRunning = false;
+let speed = 100; // Default medium speed
 
-// Game loop
-function gameLoop() {
-    if (gameOver) {
-        drawGameOver();
-        return;
+highScoreElement.textContent = `High Score: ${highScore}`;
+
+// Adjust game speed based on difficulty selection
+difficultySelect.addEventListener('change', () => {
+    const level = difficultySelect.value;
+    speed = level === 'easy' ? 150 : level === 'hard' ? 50 : 100;
+    if (isGameRunning) {
+        clearInterval(gameLoop);
+        gameLoop = setInterval(gameLoopFunction, speed);
     }
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Update snake position
-    moveSnake();
-    
-    // Check for collisions
-    checkCollision();
-    
-    // Draw everything
-    drawSnake();
-    drawFood();
-    updateScore();
-    
-    // Continue game loop with a delay to control game speed
-    setTimeout(gameLoop, 100);
+});
+
+// Start or pause the game
+startPauseButton.addEventListener('click', () => {
+    if (isGameRunning) {
+        clearInterval(gameLoop);
+        startPauseButton.textContent = 'Start';
+        isGameRunning = false;
+    } else {
+        gameLoop = setInterval(gameLoopFunction, speed);
+        startPauseButton.textContent = 'Pause';
+        isGameRunning = true;
+    }
+});
+
+// Restart the game after game over
+restartButton.addEventListener('click', () => {
+    resetGame();
+    gameOverScreen.style.display = 'none';
+    gameLoop = setInterval(gameLoopFunction, speed);
+    startPauseButton.textContent = 'Pause';
+    isGameRunning = true;
+});
+
+// Keyboard controls for directional input
+document.addEventListener('keydown', changeDirection);
+
+// Touch controls for mobile devices
+let touchStartX = 0;
+let touchStartY = 0;
+canvas.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+});
+canvas.addEventListener('touchmove', (e) => {
+    if (!isGameRunning) return;
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
+    const diffX = touchX - touchStartX;
+    const diffY = touchY - touchStartY;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 30 && dx !== -1) { dx = 1; dy = 0; }
+        else if (diffX < -30 && dx !== 1) { dx = -1; dy = 0; }
+    } else {
+        if (diffY > 30 && dy !== -1) { dx = 0; dy = 1; }
+        else if (diffY < -30 && dy !== 1) { dx = 0; dy = -1; }
+    }
+    touchStartX = touchX;
+    touchStartY = touchY;
+});
+
+/**
+ * Changes the direction of the snake based on key input.
+ * Prevents reversing direction directly into itself.
+ * @param {KeyboardEvent} event - The keydown event object.
+ */
+function changeDirection(event) {
+    const keyPressed = event.key;
+    if (keyPressed === 'ArrowUp' && dy !== 1) { dx = 0; dy = -1; }
+    else if (keyPressed === 'ArrowDown' && dy !== -1) { dx = 0; dy = 1; }
+    else if (keyPressed === 'ArrowLeft' && dx !== 1) { dx = -1; dy = 0; }
+    else if (keyPressed === 'ArrowRight' && dx !== -1) { dx = 1; dy = 0; }
 }
 
-// Move the snake based on current velocity
-function moveSnake() {
-    // Calculate new head position
-    const head = { x: snake[0].x + velocityX, y: snake[0].y + velocityY };
-    
-    // Add new head to the beginning of snake array
+/**
+ * Main game loop function that updates snake position, checks collisions,
+ * and redraws the game state on the canvas.
+ */
+function gameLoopFunction() {
+    // Move snake by adding a new head in the current direction
+    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
-    
-    // Check if snake ate food
-    if (head.x === foodX && head.y === foodY) {
-        score++;
+
+    // Check if snake eats food
+    if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreElement.textContent = `Score: ${score}`;
+        eatSound.play().catch(error => console.log('Audio play error:', error));
         generateFood();
     } else {
-        // Remove tail if no food is eaten
-        snake.pop();
+        snake.pop(); // Remove tail if no food is eaten
     }
-}
 
-// Check for collisions with walls or self
-function checkCollision() {
-    const head = snake[0];
-    
-    // Wall collision
+    // Check for wall collision
     if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        gameOver = true;
+        gameOver();
+        return;
     }
-    
-    // Self collision
+
+    // Check for self collision
     for (let i = 1; i < snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y) {
-            gameOver = true;
+            gameOver();
+            return;
         }
     }
+
+    // Clear canvas and redraw
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw snake with detailed styling
+    ctx.fillStyle = 'green';
+    for (let part of snake) {
+        ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
+        ctx.strokeStyle = 'darkgreen';
+        ctx.strokeRect(part.x * gridSize, part.y * gridSize, gridSize - 2, gridSize - 2);
+    }
+    // Draw food as a circle
+    ctx.fillStyle = 'red';
+    ctx.beginPath();
+    ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2 - 2, 0, Math.PI * 2);
+    ctx.fill();
 }
 
-// Generate new food position randomly
+/**
+ * Generates new food position randomly on the grid,
+ * ensuring it doesn't overlap with the snake.
+ */
 function generateFood() {
-    foodX = Math.floor(Math.random() * tileCount);
-    foodY = Math.floor(Math.random() * tileCount);
-    
-    // Ensure food doesn't spawn on snake
-    for (let segment of snake) {
-        if (foodX === segment.x && foodY === segment.y) {
+    food.x = Math.floor(Math.random() * tileCount);
+    food.y = Math.floor(Math.random() * tileCount);
+    for (let part of snake) {
+        if (food.x === part.x && food.y === part.y) {
             generateFood(); // Recursive call if food spawns on snake
         }
     }
 }
 
-// Draw the snake on the canvas
-function drawSnake() {
-    for (let segment of snake) {
-        ctx.fillStyle = 'green';
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+/**
+ * Handles game over state, stops the game loop, plays sound,
+ * updates high score if necessary, and shows game over screen.
+ */
+function gameOver() {
+    clearInterval(gameLoop);
+    isGameRunning = false;
+    startPauseButton.textContent = 'Start';
+    gameOverSound.play().catch(error => console.log('Audio play error:', error));
+    finalScoreElement.textContent = score;
+    gameOverScreen.style.display = 'flex';
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+        highScoreElement.textContent = `High Score: ${highScore}`;
     }
 }
 
-// Draw the food on the canvas
-function drawFood() {
-    ctx.fillStyle = 'red';
-    ctx.fillRect(foodX * gridSize, foodY * gridSize, gridSize - 2, gridSize - 2);
-}
-
-// Update the score display in the DOM
-function updateScore() {
-    document.getElementById('score').textContent = score;
-}
-
-// Draw game over message when game ends
-function drawGameOver() {
-    ctx.fillStyle = 'black';
-    ctx.font = '30px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2 - 15);
-    ctx.font = '20px Arial';
-    ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 20);
-}
-
-// Reset game state to start a new game
+/**
+ * Resets game state to initial values for a new game.
+ */
 function resetGame() {
     snake = [{ x: 10, y: 10 }];
-    velocityX = 0;
-    velocityY = 0;
+    food = { x: 15, y: 15 };
+    dx = 0;
+    dy = 0;
     score = 0;
-    gameOver = false;
-    generateFood();
-    gameLoop();
+    scoreElement.textContent = `Score: ${score}`;
 }
 
-// Handle keyboard input for snake direction
-document.addEventListener('keydown', (e) => {
-    if (gameOver) return;
-    
-    // Prevent reversing direction directly into the snake's body
-    switch (e.key) {
-        case 'ArrowUp':
-            if (velocityY !== 1) {
-                velocityX = 0;
-                velocityY = -1;
-            }
-            break;
-        case 'ArrowDown':
-            if (velocityY !== -1) {
-                velocityX = 0;
-                velocityY = 1;
-            }
-            break;
-        case 'ArrowLeft':
-            if (velocityX !== 1) {
-                velocityX = -1;
-                velocityY = 0;
-            }
-            break;
-        case 'ArrowRight':
-            if (velocityX !== -1) {
-                velocityX = 1;
-                velocityY = 0;
-            }
-            break;
-    }
-});
-
-// Attach restart functionality to the button
-document.getElementById('restartButton').addEventListener('click', resetGame);
-
-// Generate initial food position
-generateFood();
-
-// Start the game loop
-gameLoop();
+// Initial draw to show the game state before starting
+gameLoopFunction();
